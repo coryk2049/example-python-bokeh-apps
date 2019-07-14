@@ -16,6 +16,7 @@ pipeline {
 
     environment {
         APPLICATION_NAME = 'example-python-bokeh-apps'
+        APPLICATION_VERSION = '1.0'
         GIT_REPO="https://github.com/coryk2049/example-python-bokeh-apps.git"
         GIT_BRANCH="master"
         DEV_PROJECT = "test-dev"
@@ -48,7 +49,7 @@ pipeline {
                     mv sonar-scanner-$SONARQUBE_SCANNER_VERSION-linux sonarqube-scanner
                     sed -i 's/use_embedded_jre=true/use_embedded_jre=false/g' sonarqube-scanner/bin/sonar-scanner
                     #./sonar-scanner -X -Dsonar.login=admin -Dsonar.password=admin -Dsonar.projectBaseDir=. -Dsonar.host.url=http://sonarqube:9000
-                    ./sonarqube-scanner/bin/sonar-scanner -X -Dsonar.login=admin -Dsonar.password=admin -Dsonar.projectBaseDir=. -Dsonar.projectKey=dummy -Dsonar.projectKey=MyProjectKey -Dsonar.projectName="My Project Name" -Dsonar.projectVersion=1 -Dsonar.sources=./apps/ -Dsonar.host.url=http://sonarqube:9000
+                    ./sonarqube-scanner/bin/sonar-scanner -X -Dsonar.login=admin -Dsonar.password=admin -Dsonar.projectBaseDir=. -Dsonar.projectKey=dummy -Dsonar.projectKey=MyProjectKey -Dsonar.projectName="${APPLICATION_NAME}" -Dsonar.projectVersion="${APPLICATION_VERSION}" -Dsonar.sources=./apps/ -Dsonar.host.url=http://sonarqube:9000
                     '''
                 }
             }

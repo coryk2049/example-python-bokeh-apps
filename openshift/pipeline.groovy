@@ -36,10 +36,19 @@ pipeline {
                 sh "pwd; tree"
             }
         }
-        stage('Unit Test') {
-            steps {
-                sleep 1
-            }
+        stage('Run Unit Test(s)') {
+            parallel {
+                stage('Unit Test 1') {
+                    steps {
+                        sleep 1
+                    }
+                }
+                stage('Unit Test N') {
+                    steps {
+                        sleep 1
+                    }
+                }
+            }      
         }    
         stage('Code Analysis') {
             steps {
@@ -119,14 +128,17 @@ pipeline {
                         openshift.withProject(DEV_PROJECT) {
                             def app = openshift.newApp("${GIT_REPO}")
                             def dc = openshift.selector("dc", "${APPLICATION_NAME}")
+                            //openshift.set.env("dc/${APPLICATION_NAME}", "BOKEH_ALLOW_WS_ORIGIN=${DEV_BOKEH_ALLOW_WS_ORIGIN}")
+
                             sh "oc project"
                             sh "oc project ${DEV_PROJECT}"
                             sh "oc set env dc/${APPLICATION_NAME} BOKEH_ALLOW_WS_ORIGIN=${DEV_BOKEH_ALLOW_WS_ORIGIN}"
+
                             while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
                                 sleep 5
                             }
                             openshift.set("triggers", "dc/${APPLICATION_NAME}", "--manual")
-                            app.narrow("svc").expose();
+                            app.narrow("svc").expose("--hostname=${DEV_BOKEH_ALLOW_WS_ORIGIN}");
                         }
                     }
                 }
@@ -169,7 +181,7 @@ pipeline {
                             sh "oc project"
                             sh "oc project ${STAGE_PROJECT}"
                             sh "oc set env dc/${APPLICATION_NAME} BOKEH_ALLOW_WS_ORIGIN=${STAGE_BOKEH_ALLOW_WS_ORIGIN}"
-                            app.narrow("svc").expose();
+                            app.narrow("svc").expose("--hostname=${STAGE_BOKEH_ALLOW_WS_ORIGIN}");
                         }
                     }
                 }

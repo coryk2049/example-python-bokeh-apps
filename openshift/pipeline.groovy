@@ -43,6 +43,11 @@ pipeline {
                         sleep 1
                     }
                 }
+                stage('Unit Test 2') {
+                    steps {
+                        sleep 1
+                    }
+                }
                 stage('Unit Test N') {
                     steps {
                         sleep 1

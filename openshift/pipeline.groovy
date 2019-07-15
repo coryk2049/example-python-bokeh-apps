@@ -5,7 +5,6 @@
 //oc new-project test-stage
 //oc create serviceaccount jenkins -n test-stage
 //oc policy add-role-to-user edit system:serviceaccount:test:jenkins -n test-stage
-
 //oc project test-dev; oc delete all --selector app=example-python-bokeh-apps
 //oc project test-stage; oc delete all --selector app=example-python-bokeh-apps
 
@@ -15,27 +14,31 @@ pipeline {
     }
 
     environment {
-        APPLICATION_NAME = 'example-python-bokeh-apps'
-        APPLICATION_VERSION = '1.0'
+        APPLICATION_NAME="example-python-bokeh-apps"
+        APPLICATION_VERSION="1.0"
         GIT_REPO="https://github.com/coryk2049/example-python-bokeh-apps.git"
         GIT_BRANCH="master"
-        DEV_PROJECT = "test-dev"
-        STAGE_PROJECT = "test-stage"
-        STAGE_TAG = "promoteToQA"
-        DEV_BOKEH_ALLOW_WS_ORIGIN = "example-python-bokeh-apps-test-dev.128.60.8.73.nip.io"
-        STAGE_BOKEH_ALLOW_WS_ORIGIN = "example-python-bokeh-apps-test-stage.128.60.8.73.nip.io"
+        DEV_PROJECT="test-dev"
+        STAGE_PROJECT="test-stage"
+        STAGE_TAG="promoteToQA"
+        DEV_BOKEH_ALLOW_WS_ORIGIN="example-python-bokeh-apps-test-dev.128.60.8.73.nip.io"
+        STAGE_BOKEH_ALLOW_WS_ORIGIN="example-python-bokeh-apps-test-stage.128.60.8.73.nip.io"
+        SONAR_LOGIN="admin"
+        SONAR_PASS="admin"
+        SONAR_ENDPOINT="http://sonarqube:9000" 
+        SONAR_SRC="./apps/"
     }
 
     stages {
-        stage('Check Out Latest Code') {
+        stage('Check Out Latest') {
             steps {
                 git branch: "${GIT_BRANCH}", url: "${GIT_REPO}"
                 sh "pwd; tree"
             }
         }
-        stage('Test') {
+        stage('Unit Test') {
             steps {
-                sh "sleep 3"
+                sleep 1
             }
         }    
         stage('Code Analysis') {
@@ -48,15 +51,14 @@ pipeline {
                     rm sonar-scanner-cli-$SONARQUBE_SCANNER_VERSION-linux.zip 
                     mv sonar-scanner-$SONARQUBE_SCANNER_VERSION-linux sonarqube-scanner
                     sed -i 's/use_embedded_jre=true/use_embedded_jre=false/g' sonarqube-scanner/bin/sonar-scanner
-                    #./sonar-scanner -X -Dsonar.login=admin -Dsonar.password=admin -Dsonar.projectBaseDir=. -Dsonar.host.url=http://sonarqube:9000
-                    ./sonarqube-scanner/bin/sonar-scanner -X -Dsonar.login=admin -Dsonar.password=admin -Dsonar.projectBaseDir=. -Dsonar.projectKey=dummy -Dsonar.projectKey=MyProjectKey -Dsonar.projectName="${APPLICATION_NAME}" -Dsonar.projectVersion="${APPLICATION_VERSION}" -Dsonar.sources=./apps/ -Dsonar.host.url=http://sonarqube:9000
+                    ./sonarqube-scanner/bin/sonar-scanner -X -Dsonar.login=${SONAR_LOGIN} -Dsonar.password=${SONAR_PASS} -Dsonar.projectBaseDir=. -Dsonar.projectKey=MyProjectKey -Dsonar.projectName="${APPLICATION_NAME}" -Dsonar.projectVersion="${APPLICATION_VERSION}" -Dsonar.sources=${SONAR_SRC} -Dsonar.host.url=${SONAR_ENDPOINT}
                     '''
                 }
             }
         }
         stage('Archive App') {
             steps {
-                sh "sleep 3"
+                sleep 1
             }
         }
         stage('Create Image Builder') {
@@ -73,7 +75,7 @@ pipeline {
                 script {
                     openshift.withCluster() {
                         openshift.withProject(DEV_PROJECT) {
-                            sh "sleep 3"
+                            sleep 1
                             //openshift.newBuild("--name=cory-bokeh", "--image-stream=openshift/wildfly:13.0", "--binary=true")
                         }
                     }
@@ -94,7 +96,7 @@ pipeline {
                 script {
                     openshift.withCluster() {
                         openshift.withProject(DEV_PROJECT) {
-                            sh "sleep 3"
+                            sleep 1
                             //openshift.selector("bc", "${APPLICATION_NAME}").startBuild("--from-dir=oc-build", "--wait=true")
                         }
                     }
@@ -117,11 +119,9 @@ pipeline {
                         openshift.withProject(DEV_PROJECT) {
                             def app = openshift.newApp("${GIT_REPO}")
                             def dc = openshift.selector("dc", "${APPLICATION_NAME}")
-                            
                             sh "oc project"
                             sh "oc project ${DEV_PROJECT}"
                             sh "oc set env dc/${APPLICATION_NAME} BOKEH_ALLOW_WS_ORIGIN=${DEV_BOKEH_ALLOW_WS_ORIGIN}"
-                            
                             while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
                                 sleep 5
                             }
@@ -165,13 +165,10 @@ pipeline {
                                 openshift.selector('svc', '${APPLICATION_NAME}').delete()
                                 openshift.selector('route', '${APPLICATION_NAME}').delete()
                             }
-
                             def app = openshift.newApp("${APPLICATION_NAME}:${STAGE_TAG}")
-
                             sh "oc project"
                             sh "oc project ${STAGE_PROJECT}"
                             sh "oc set env dc/${APPLICATION_NAME} BOKEH_ALLOW_WS_ORIGIN=${STAGE_BOKEH_ALLOW_WS_ORIGIN}"
-
                             app.narrow("svc").expose();
                         }
                     }

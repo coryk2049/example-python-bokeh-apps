@@ -79,7 +79,7 @@ pipeline {
             when {
                 expression {
                     openshift.withCluster() {
-                        openshift.withProject(DEV_PROJECT) {
+                        openshift.withProject("${DEV_PROJECT}") {
                             return !openshift.selector("bc", "${APPLICATION_NAME}").exists();
                         }
                     }
@@ -88,7 +88,7 @@ pipeline {
             steps {
                 script {
                     openshift.withCluster() {
-                        openshift.withProject(DEV_PROJECT) {
+                        openshift.withProject("${DEV_PROJECT}") {
                             sleep 1
                             //openshift.newBuild("--name=cory-bokeh", "--image-stream=openshift/wildfly:13.0", "--binary=true")
                         }
@@ -100,7 +100,7 @@ pipeline {
             when {
                 expression {
                     openshift.withCluster() {
-                        openshift.withProject(DEV_PROJECT) {
+                        openshift.withProject("${DEV_PROJECT}") {
                             return !openshift.selector("bc", "${APPLICATION_NAME}").exists();
                         }
                     }
@@ -109,7 +109,7 @@ pipeline {
             steps {
                 script {
                     openshift.withCluster() {
-                        openshift.withProject(DEV_PROJECT) {
+                        openshift.withProject("${DEV_PROJECT}") {
                             sleep 1
                             //openshift.selector("bc", "${APPLICATION_NAME}").startBuild("--from-dir=oc-build", "--wait=true")
                         }
@@ -121,7 +121,7 @@ pipeline {
             when {
                 expression {
                     openshift.withCluster() {
-                        openshift.withProject(DEV_PROJECT) {
+                        openshift.withProject("${DEV_PROJECT}") {
                             return !openshift.selector("bc", "${APPLICATION_NAME}").exists();
                         }
                     }
@@ -130,7 +130,7 @@ pipeline {
             steps {
                 script {
                     openshift.withCluster() {
-                        openshift.withProject(DEV_PROJECT) {
+                        openshift.withProject("${DEV_PROJECT}") {
                             def app = openshift.newApp("${GIT_REPO}")
                             def dc = openshift.selector("dc", "${APPLICATION_NAME}")
                             //openshift.set.env("dc/${APPLICATION_NAME}", "BOKEH_ALLOW_WS_ORIGIN=${DEV_BOKEH_ALLOW_WS_ORIGIN}")
@@ -153,7 +153,7 @@ pipeline {
             steps {
                 script {
                     openshift.withCluster() {
-                        openshift.withProject(DEV_PROJECT) {
+                        openshift.withProject("${DEV_PROJECT}") {
                             openshift.selector("dc", "${APPLICATION_NAME}").rollout().latest();
                         }
                     }
@@ -176,7 +176,7 @@ pipeline {
             steps {
                 script {
                     openshift.withCluster() {
-                        openshift.withProject(STAGE_PROJECT) {
+                        openshift.withProject("${STAGE_PROJECT}") {
                             if (openshift.selector('dc', '${APPLICATION_NAME}').exists()) {
                                 openshift.selector('dc', '${APPLICATION_NAME}').delete()
                                 openshift.selector('svc', '${APPLICATION_NAME}').delete()
